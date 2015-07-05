@@ -5,6 +5,7 @@ var Repos = require("./Github/Repos");
 var Notes = require("./Notes/Notes");
 var ReactFireMixin = require("reactfire");
 var Firebase = require("firebase"); 
+var helpers = require("../utils/helpers"); 
 
 // https://shining-fire-4684.firebaseio.com/
 
@@ -20,13 +21,28 @@ var Profile = React.createClass({
 	handleAddNote: function(newNote){
 		this.ref.child(this.getParams().username).set(this.state.notes.concat([newNote]));
 	},
-	componentDidMount: function(){
-		this.ref = new Firebase("https://shining-fire-4684.firebaseio.com");
+	init: function(){
 		var ChildRef = this.ref.child(this.getParams().username);
 		this.bindAsArray(ChildRef, 'notes');
+
+		helpers.getGithubInfo(this.getParams().username)
+			.then(function(res){
+				this.setState({
+					repos: res.repos,
+					bio: res.bio
+				});
+			}.bind(this));
+	},
+	componentDidMount: function(){
+		this.ref = new Firebase("https://shining-fire-4684.firebaseio.com");
+		this.init();
 	},
 	componentWillUnmount: function(){
 		this.unbind('notes');
+	},
+	componentWillReceiveProps: function(){
+		this.unbind('notes');
+		this.init();
 	},
 	render: function(){
 		var username = this.getParams().username;
